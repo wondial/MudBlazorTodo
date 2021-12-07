@@ -1,0 +1,50 @@
+﻿@page "/taskinfo"
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+
+
+
+<div>
+    <MudCard Class="ma-2 pa-2 mud-height-full">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h3">Task info</MudText>
+            </CardHeaderContent>
+
+        </MudCardHeader>
+        <MudCardContent>
+            <MudForm Model="@CurrentItem">
+                <MudCheckBox T="bool" Label="完成" Class="my-2"
+                             @bind-Checked="CurrentItem.IsFinish" />
+                <MudCheckBox @bind-Checked="@CurrentItem.IsImportant" Color="Color.Secondary"
+                             CheckedIcon="@Icons.Material.Filled.Star" Class="my-2"
+                             UncheckedIcon="@Icons.Material.Filled.StarOutline" />
+                <MudTextField T="string" Label="标题" Required="true" RequiredError="Title is required!"
+                              AutoFocus=true Class="my-2"
+                              @bind-Value="CurrentItem.Title" />
+                <MudTextField Label="计划日期" Format="yyyy/MM/dd" Class="my-2"
+                              @bind-Value="CurrentItem.PlanTime" />
+                <MudTextField Label="截止日期" Format="yyyy/MM/dd" Class="my-2"
+                              @bind-Value="CurrentItem.Deadline" />
+                <MudTextField T="string" Label="描述" Class="my-2"
+                              @bind-Value="CurrentItem.Description" />
+
+            </MudForm>
+        </MudCardContent>
+
+    </MudCard>
+</div>
+
+@code {
+    [Parameter] public TaskDto CurrentItem { get; set; } = new();
+    [Parameter] public EventCallback<TaskDto> CurrentItemChanged { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (CurrentItemChanged.HasDelegate)
+        {
+            await CurrentItemChanged.InvokeAsync(CurrentItem);
+
+        }
+    }
+}

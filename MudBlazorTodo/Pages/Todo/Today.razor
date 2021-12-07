@@ -1,0 +1,221 @@
+﻿@page "/today"
+@using MudBlazorTodo.Services
+@using MudBlazorTodo.Shared
+@inject TodoTaskService TaskSvr
+
+<MudCard class=" mud-height-full" MaxWidth="MaxWidth.Large" Style="overflow:hidden; position:relative;">
+    <MudCardHeader>
+        <CardHeaderContent >
+            <div class="flex-row mud-info ma-3 pa-4" >
+                <MudText Typo="Typo.h4">我的一天</MudText>
+                <MudText Class=ma-auto Typo="Typo.h6">@DateTime.Now.ToString("yyyy年MM月dd日")</MudText>
+            </div>
+        </CardHeaderContent>
+        <CardHeaderActions>
+             <MudText Typo="Typo.h6" class="mt-6 pa-4 mud-success">未完成(@taskDtos.Count(td=>!td.IsFinish))</MudText>
+            @*<MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />*@
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudDrawerContainer>
+            <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always" Color="Color.Primary"
+                       Anchor=Anchor.Left Width="300px" Variant="@DrawerVariant.Persistent">
+                <TaskInfo CurrentItem=@selectedItem />
+            </MudDrawer>
+
+            <MudList Clickable="true" @bind-SelectedValue="selectedValue" style="max-height:800px;overflow:auto">
+                @foreach (var item in taskDtos)
+                {
+                    <MudPaper Class="ma-2">
+                        <MudListItem Class="pa-1 " Value=@item OnClick="itemClick">
+                            <div class="task-card-item">
+                                <div class="finish">
+                                    <MudCheckBox Class=ma-auto T="bool" @bind-Checked=@item.IsFinish />
+                                </div>
+                                <div class="title">
+                                    <MudText Typo="Typo.subtitle1">@item.Title</MudText>
+                                    <MudText Typo="Typo.body2">@item.Description</MudText>
+
+                                </div>
+
+                                <div class="date">
+                                    @item.PlanTime.ToShortDateString()
+                                    <br />
+                                    @{
+                                        int? days = (int?)item.Deadline?.Subtract(DateTime.Now.Date).TotalDays;
+                                    }
+                                    <span style="color:@(days switch { _ when days > 3 => "#ccc", _ when days > 0 => "#ffd800", _ => "#ff0000" })">
+                                        @item.Deadline?.ToShortDateString()
+                                    </span>
+                                </div>
+
+                                <div class="star">
+                                    <MudCheckBox @bind-Checked="@item.IsImportant" Color="Color.Secondary"
+                                             CheckedIcon="@Icons.Material.Filled.Star"
+                                             UncheckedIcon="@Icons.Material.Filled.StarOutline"></MudCheckBox>
+                                </div>
+
+                            </div>
+                        </MudListItem>
+                    </MudPaper>
+                }
+            </MudList>
+        </MudDrawerContainer>
+    </MudCardContent>
+    <MudCardActions>
+        <MudButton Variant="Variant.Text" Color="Color.Primary">New Todo</MudButton>
+    </MudCardActions>
+</MudCard>
+
+
+@*<MudLayout>
+    <MudAppBar Elevation="1">
+    <MudText Typo="Typo.h3">Todo</MudText>
+    <MudSpacer />
+    <MudText Typo="Typo.h6">未完成(@taskDtos.Count(td=>!td.IsFinish))</MudText>
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="1"
+    Variant="@DrawerVariant.Responsive" Width=300>
+    <TaskInfo CurrentItem=@selectedItem />
+    </MudDrawer>
+    <MudMainContent Class="pt-16 px-16">
+    <MudContainer Class="mt-6">
+    <MudList Clickable="true" @bind-SelectedValue="selectedValue" style="max-height:800px;overflow:auto">
+    @foreach (var item in taskDtos)
+    {
+    <MudPaper Class="ma-2">
+    <MudListItem Class="pa-1 " Value=@item OnClick="itemClick">
+    <div class="task-card-item">
+    <div class="finish">
+    <MudCheckBox Class=ma-auto T="bool" @bind-Checked=@item.IsFinish />
+    </div>
+    <div class="title">
+    <MudText Typo="Typo.subtitle1">@item.Title</MudText>
+    <MudText Typo="Typo.body2">@item.Description</MudText>
+
+    </div>
+
+    <div class="date">
+    @item.PlanTime.ToShortDateString()
+    <br />
+    @{
+    int? days = (int?)item.Deadline?.Subtract(DateTime.Now.Date).TotalDays;
+    }
+    <span style="color:@(days switch { _ when days > 3 => "#ccc", _ when days > 0 => "#ffd800", _ => "#ff0000" })">
+    @item.Deadline?.ToShortDateString()
+    </span>
+    </div>
+
+    <div class="star">
+    <MudCheckBox @bind-Checked="@item.IsImportant" Color="Color.Secondary"
+    CheckedIcon="@Icons.Material.Filled.Star"
+    UncheckedIcon="@Icons.Material.Filled.StarOutline"></MudCheckBox>
+    </div>
+
+    </div>
+    </MudListItem>
+    </MudPaper>
+    }
+    </MudList>
+    </MudContainer>
+    </MudMainContent>
+    </MudLayout>*@
+
+@code {
+    private List<TaskDto> taskDtos = new List<TaskDto>();
+    TaskDto selectedItem;
+    TaskDto oldItem = new();
+    object selectedValue;
+    public bool _drawerOpen = false;
+
+    void itemClick()
+    {
+        selectedItem = (TaskDto)selectedValue;
+        if (oldItem != selectedItem)
+        {
+            oldItem = selectedItem;
+            _drawerOpen = true;
+        }
+        else
+        {
+            oldItem = new();
+            _drawerOpen = false;
+        }
+
+    }
+    protected async override Task OnInitializedAsync()
+    {
+
+        taskDtos = TaskSvr.LoadToday();
+        selectedItem = taskDtos.Count > 0 ? taskDtos[0] : new();
+        _drawerOpen = false;
+        await base.OnInitializedAsync();
+    }
+}
+
+<style>
+    .task-card {
+        margin-bottom: 3px;
+    }
+
+        .task-card:hover {
+            background-color: #eee;
+            margin-bottom: 3px;
+        }
+
+            .task-card:hover .del {
+                color: #ff0000
+            }
+
+    .task-card-item {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+    }
+
+        .task-card-item .finish {
+            text-align: center;
+            flex: 0 0 32px;
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        .task-card-item .del {
+            text-align: center;
+            flex: 0 0 32px;
+            font-size: 24px;
+            margin-right: 10px;
+            color: rgba(255, 0, 0, 0.00);
+            cursor: pointer;
+        }
+
+
+        .task-card-item .star {
+            text-align: center;
+            flex: 0 0 32px;
+            font-size: 24px;
+            margin-left: 10px;
+        }
+
+        .task-card-item .title {
+            flex: 1 1 auto;
+            cursor: pointer;
+        }
+
+        .task-card-item .date {
+            flex: 0 0 auto
+        }
+
+        .task-card-item .unfinish {
+            color: white;
+        }
+
+            .task-card-item .unfinish:hover {
+                color: #808080;
+            }
+
+    .task-input {
+        display: flex;
+        flex-direction: row
+    }
+</style>
